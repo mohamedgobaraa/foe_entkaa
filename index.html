@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TableForge — Dynamic Table Builder</title>
+  <title>انتقاء جهاز مستقبل مصر</title>
   <link rel="stylesheet" href="style.css" />
   <!-- SheetJS (local for offline) -->
   <script src="xlsx.full.min.js"></script>
@@ -15,32 +15,32 @@
     <div class="setup-card">
       <div class="setup-logo">
         <span class="logo-mark">⬡</span>
-        <span class="logo-text">TableForge</span>
+        <span class="logo-text">انتقاء جهاز</span>
       </div>
-      <p class="setup-tagline">Build · Edit · Export</p>
+      <p class="setup-tagline">إنشاء · تعديل · تصدير</p>
 
       <!-- Step 1: column count -->
       <div id="step-count" class="setup-step active">
         <label class="step-label">
           <span class="step-num">01</span>
-          How many columns?
+          كم عدد الأعمدة؟
         </label>
         <div class="number-input-wrap">
-          <button class="num-btn" id="btn-dec" aria-label="Decrease">−</button>
+          <button class="num-btn" id="btn-dec" aria-label="إنقاص">−</button>
           <input type="number" id="col-count" value="3" min="1" max="20" />
-          <button class="num-btn" id="btn-inc" aria-label="Increase">+</button>
+          <button class="num-btn" id="btn-inc" aria-label="زيادة">+</button>
         </div>
-        <button class="cta-btn" id="btn-next">Next →</button>
+        <button class="cta-btn" id="btn-next">التالي ←</button>
       </div>
 
       <!-- Step 2: column names -->
       <div id="step-names" class="setup-step">
         <label class="step-label">
           <span class="step-num">02</span>
-          Name your columns
+          سمّي الأعمدة
         </label>
         <div id="col-names-wrap"></div>
-        <button class="cta-btn" id="btn-create">Create Table</button>
+        <button class="cta-btn" id="btn-create">إنشاء الجدول</button>
       </div>
     </div>
   </div>
@@ -51,10 +51,10 @@
     <header class="app-header">
       <div class="header-brand">
         <span class="logo-mark small">⬡</span>
-        <span class="logo-text">TableForge</span>
+        <span class="logo-text">انتقاء جهاز</span>
       </div>
       <div class="header-meta" id="table-meta"></div>
-      <button class="ghost-btn" id="btn-reset" title="Start over">↺ Reset</button>
+      <button class="ghost-btn" id="btn-reset" title="البدء من جديد">↺ إعادة</button>
     </header>
 
     <!-- Toolbar -->
@@ -62,14 +62,14 @@
       <div class="toolbar-left">
         <button class="action-btn add" id="btn-add-row">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><line x1="8" y1="2" x2="8" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="2" y1="8" x2="14" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          Add Row
+          إضافة صف
         </button>
       </div>
       <div class="toolbar-right">
-        <span id="row-counter" class="row-counter">0 rows</span>
+        <span id="row-counter" class="row-counter">0 صف</span>
         <button class="action-btn export" id="btn-export">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          Export / Share Excel
+          مشاركة Excel
         </button>
       </div>
     </div>
@@ -83,7 +83,7 @@
         </table>
         <div id="empty-state" class="empty-state hidden">
           <span class="empty-icon">⬡</span>
-          <p>No rows yet — hit <strong>Add Row</strong> to start filling in data.</p>
+          <p>لا توجد صفوف — اضغط <strong>إضافة صف</strong> لبدء الإدخال.</p>
         </div>
       </div>
     </div>

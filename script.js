@@ -1,6 +1,6 @@
 /* ════════════════════════════════════════════
-   TableForge — script.js
-   Vanilla JS — no build step — CDN only
+   انتقاء جهاز مستقبل مصر — script.js
+   Vanilla JS — no build step
 ════════════════════════════════════════════ */
 
 'use strict';
@@ -56,7 +56,7 @@ function buildNameInputs(n) {
       <input
         class="col-name-input"
         type="text"
-        placeholder="Column ${i + 1}"
+        placeholder="عمود ${i + 1}"
         maxlength="40"
         data-index="${i}"
       />
@@ -82,7 +82,7 @@ document.getElementById('btn-create').addEventListener('click', createTable);
 
 function createTable() {
   const inputs  = [...colNamesWrap.querySelectorAll('.col-name-input')];
-  const columns = inputs.map((el, i) => el.value.trim() || `Column ${i + 1}`);
+  const columns = inputs.map((el, i) => el.value.trim() || `عمود ${i + 1}`);
 
   // Save to state
   state.columns  = columns;
@@ -97,7 +97,7 @@ function createTable() {
   showEmptyState(true);
 
   // Update header meta
-  tableMeta.textContent = `${columns.length} columns`;
+  tableMeta.textContent = `${columns.length} أعمدة`;
 
   // Transition
   overlay.classList.remove('active');
@@ -109,14 +109,14 @@ function buildTableHeader(columns) {
   const tr = document.createElement('tr');
 
   // Row number header
-  tr.appendChild(makeEl('th', { class: 'col-num', title: 'Row #' }, '#'));
+  tr.appendChild(makeEl('th', { class: 'col-num', title: 'رقم الصف' }, '#'));
 
   columns.forEach(name => {
     tr.appendChild(makeEl('th', {}, name));
   });
 
   // Delete column header
-  tr.appendChild(makeEl('th', { class: 'col-del', title: 'Delete row' }, ''));
+  tr.appendChild(makeEl('th', { class: 'col-del', title: 'حذف الصف' }, ''));
 
   tableHead.appendChild(tr);
 }
@@ -144,7 +144,7 @@ function addRow() {
     input.rows        = 1;
     input.placeholder = '—';
     input.dataset.col = i;
-    input.setAttribute('aria-label', `${col}, row ${rowNum}`);
+    input.setAttribute('aria-label', `${col}، صف ${rowNum}`);
 
     // Auto-grow height
     input.addEventListener('input', autoGrow);
@@ -157,12 +157,12 @@ function addRow() {
   tdDel.className = 'col-del';
   const delBtn = document.createElement('button');
   delBtn.className = 'del-row-btn';
-  delBtn.title      = 'Delete this row';
+  delBtn.title      = 'حذف هذا الصف';
   delBtn.innerHTML  = '×';
   delBtn.addEventListener('click', () => {
     tr.style.transition = 'opacity .2s, transform .2s';
     tr.style.opacity    = '0';
-    tr.style.transform  = 'translateX(8px)';
+    tr.style.transform  = 'translateX(-8px)';
     setTimeout(() => {
       tr.remove();
       renumberRows();
@@ -199,7 +199,7 @@ function renumberRows() {
 
 function updateCounter() {
   const n = tableBody.rows.length;
-  rowCounter.textContent = `${n} row${n !== 1 ? 's' : ''}`;
+  rowCounter.textContent = `${n} صف`;
 }
 
 function showEmptyState(yes) {
@@ -230,11 +230,11 @@ document.getElementById('btn-reset').addEventListener('click', () => {
 // ── Export / Share Excel ───────────────────────
 document.getElementById('btn-export').addEventListener('click', exportExcel);
 
-function exportExcel() {
+async function exportExcel() {
   const rows = [...tableBody.rows];
 
   if (rows.length === 0) {
-    showToast('Table is empty — add some rows first.', 'error');
+    showToast('الجدول فارغ — أضف بعض الصفوف أولاً', 'error');
     return;
   }
 
@@ -255,28 +255,36 @@ function exportExcel() {
   }));
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'TableForge Data');
+  XLSX.utils.book_append_sheet(wb, ws, 'البيانات');
 
-  const filename = `tableforge_${timestamp()}.xlsx`;
+  const filename = `انتقاء_${timestamp()}.xlsx`;
 
-  // Try Web Share API
-  if (navigator.canShare && navigator.share) {
-    const xlsxData = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([xlsxData], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    });
-    const file = new File([blob], filename, { type: blob.type });
+  // Create the Excel file
+  const xlsxData = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([xlsxData], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+  const file = new File([blob], filename, { type: blob.type });
 
-    if (navigator.canShare({ files: [file] })) {
-      navigator.share({ files: [file], title: 'TableForge Export' })
-        .then(() => showToast('Shared successfully! ✓', 'success'))
-        .catch(err => {
-          if (err.name !== 'AbortError') {
-            // Fallback to download
-            downloadExcel(wb, filename);
-          }
+  // Try Web Share API first (for mobile)
+  if (navigator.share) {
+    try {
+      // Check if we can share files
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'انتقاء جهاز مستقبل مصر',
+          text: 'ملف Excel من تطبيق انتقاء جهاز'
         });
-      return;
+        showToast('تمت المشاركة بنجاح ✓', 'success');
+        return;
+      }
+    } catch (err) {
+      // If user cancelled, don't show error
+      if (err.name === 'AbortError') {
+        return;
+      }
+      // Otherwise fall through to download
     }
   }
 
@@ -286,7 +294,7 @@ function exportExcel() {
 
 function downloadExcel(wb, filename) {
   XLSX.writeFile(wb, filename);
-  showToast(`Downloaded as ${filename} ✓`, 'success');
+  showToast(`تم التحميل: ${filename} ✓`, 'success');
 }
 
 function timestamp() {
