@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TableForge — Dynamic Table Builder</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- SheetJS (local for offline) -->
+  <script src="xlsx.full.min.js"></script>
+</head>
+<body>
+
+  <!-- ── SETUP OVERLAY ── -->
+  <div id="setup-overlay" class="overlay active">
+    <div class="setup-card">
+      <div class="setup-logo">
+        <span class="logo-mark">⬡</span>
+        <span class="logo-text">TableForge</span>
+      </div>
+      <p class="setup-tagline">Build · Edit · Export</p>
+
+      <!-- Step 1: column count -->
+      <div id="step-count" class="setup-step active">
+        <label class="step-label">
+          <span class="step-num">01</span>
+          How many columns?
+        </label>
+        <div class="number-input-wrap">
+          <button class="num-btn" id="btn-dec" aria-label="Decrease">−</button>
+          <input type="number" id="col-count" value="3" min="1" max="20" />
+          <button class="num-btn" id="btn-inc" aria-label="Increase">+</button>
+        </div>
+        <button class="cta-btn" id="btn-next">Next →</button>
+      </div>
+
+      <!-- Step 2: column names -->
+      <div id="step-names" class="setup-step">
+        <label class="step-label">
+          <span class="step-num">02</span>
+          Name your columns
+        </label>
+        <div id="col-names-wrap"></div>
+        <button class="cta-btn" id="btn-create">Create Table</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MAIN APP ── -->
+  <div id="app" class="hidden">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-brand">
+        <span class="logo-mark small">⬡</span>
+        <span class="logo-text">TableForge</span>
+      </div>
+      <div class="header-meta" id="table-meta"></div>
+      <button class="ghost-btn" id="btn-reset" title="Start over">↺ Reset</button>
+    </header>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="action-btn add" id="btn-add-row">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><line x1="8" y1="2" x2="8" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="2" y1="8" x2="14" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Add Row
+        </button>
+      </div>
+      <div class="toolbar-right">
+        <span id="row-counter" class="row-counter">0 rows</span>
+        <button class="action-btn export" id="btn-export">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Export / Share Excel
+        </button>
+      </div>
+    </div>
+
+    <!-- Table area -->
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table id="data-table">
+          <thead id="table-head"></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+        <div id="empty-state" class="empty-state hidden">
+          <span class="empty-icon">⬡</span>
+          <p>No rows yet — hit <strong>Add Row</strong> to start filling in data.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" aria-live="polite"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,13 +1,8 @@
 {
   "appId": "com.tableforge.app",
   "appName": "TableForge",
-  "webDir": ".",
+  "webDir": "www",
   "server": {
     "androidScheme": "https"
-  },
-  "plugins": {
-    "Share": {
-      "enabled": true
-    }
   }
 }
