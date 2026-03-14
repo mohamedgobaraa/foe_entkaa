@@ -5,11 +5,17 @@
 
 'use strict';
 
+const CACHE_KEY = 'tableforge.cache.v1';
+const CACHE_VERSION = 1;
+
 // ── State ──────────────────────────────────────
 const state = {
   columns: [],   // string[]
   rowCount: 0,
 };
+
+let cacheTimer = null;
+let isRestoringCache = false;
 
 // ── DOM refs ───────────────────────────────────
 const overlay      = document.getElementById('setup-overlay');
@@ -29,18 +35,40 @@ const toast        = document.getElementById('toast');
 document.getElementById('btn-dec').addEventListener('click', () => {
   const v = parseInt(colCountEl.value, 10);
   if (v > 1) colCountEl.value = v - 1;
+  persistSetupToCache();
 });
 document.getElementById('btn-inc').addEventListener('click', () => {
   const v = parseInt(colCountEl.value, 10);
   if (v < 20) colCountEl.value = v + 1;
+  persistSetupToCache();
 });
 
+colCountEl.addEventListener('input', () => {
+  colCountEl.value = clampColumnCount(colCountEl.value, 1);
+  persistSetupToCache();
+});
+
+colNamesWrap.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' || !stepNames.classList.contains('active')) return;
+  const inputs = [...colNamesWrap.querySelectorAll('.col-name-input')];
+  const idx = inputs.indexOf(e.target);
+  if (idx < inputs.length - 1) {
+    inputs[idx + 1].focus();
+  } else {
+    createTable();
+  }
+});
+
+colNamesWrap.addEventListener('input', scheduleSetupCacheSave);
+
 document.getElementById('btn-next').addEventListener('click', () => {
-  const count = Math.min(20, Math.max(1, parseInt(colCountEl.value, 10) || 3));
+  const count = clampColumnCount(colCountEl.value, 3);
   colCountEl.value = count;
   buildNameInputs(count);
   stepCount.classList.remove('active');
   stepNames.classList.add('active');
+  persistSetupToCache();
+
   // Focus first input
   const first = colNamesWrap.querySelector('.col-name-input');
   if (first) first.focus();
@@ -63,18 +91,6 @@ function buildNameInputs(n) {
     `;
     colNamesWrap.appendChild(row);
   }
-
-  // Allow Enter to move to next input or create table on last
-  colNamesWrap.addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter') return;
-    const inputs = [...colNamesWrap.querySelectorAll('.col-name-input')];
-    const idx = inputs.indexOf(e.target);
-    if (idx < inputs.length - 1) {
-      inputs[idx + 1].focus();
-    } else {
-      createTable();
-    }
-  });
 }
 
 // ── Setup: Step 2 — create table ──────────────
@@ -102,6 +118,8 @@ function createTable() {
   // Transition
   overlay.classList.remove('active');
   app.classList.remove('hidden');
+
+  persistTableToCache();
 }
 
 function buildTableHeader(columns) {
@@ -122,9 +140,9 @@ function buildTableHeader(columns) {
 }
 
 // ── App: Add Row ───────────────────────────────
-document.getElementById('btn-add-row').addEventListener('click', addRow);
+document.getElementById('btn-add-row').addEventListener('click', () => addRow());
 
-function addRow() {
+function addRow(prefilledValues = [], focusInput = true) {
   showEmptyState(false);
   state.rowCount++;
   const rowNum = state.rowCount;
@@ -145,9 +163,11 @@ function addRow() {
     input.placeholder = '—';
     input.dataset.col = i;
     input.setAttribute('aria-label', `${col}، صف ${rowNum}`);
+    input.value = typeof prefilledValues[i] === 'string' ? prefilledValues[i] : '';
 
     // Auto-grow height
-    input.addEventListener('input', autoGrow);
+    input.addEventListener('input', onCellInput);
+    if (input.value) autoGrow({ target: input });
     td.appendChild(input);
     tr.appendChild(td);
   });
@@ -168,6 +188,7 @@ function addRow() {
       renumberRows();
       updateCounter();
       if (tableBody.rows.length === 0) showEmptyState(true);
+      persistTableToCache();
     }, 200);
   });
   tdDel.appendChild(delBtn);
@@ -178,13 +199,20 @@ function addRow() {
 
   // Focus first input in new row
   const firstInput = tr.querySelector('.cell-input');
-  if (firstInput) firstInput.focus();
+  if (focusInput && firstInput) firstInput.focus();
+
+  persistTableToCache();
 }
 
 function autoGrow(e) {
   const el = e.target;
   el.style.height = 'auto';
   el.style.height = el.scrollHeight + 'px';
+}
+
+function onCellInput(e) {
+  autoGrow(e);
+  scheduleTableCacheSave();
 }
 
 function renumberRows() {
@@ -225,6 +253,8 @@ document.getElementById('btn-reset').addEventListener('click', () => {
 
   app.classList.add('hidden');
   overlay.classList.add('active');
+
+  clearCache();
 });
 
 // ── Export / Share Excel ───────────────────────
@@ -266,6 +296,18 @@ async function exportExcel() {
   });
   const file = new File([blob], filename, { type: blob.type });
 
+  // Prefer native Android/iOS share sheet when running inside Capacitor.
+  try {
+    const sharedOnNative = await shareViaCapacitor(blob, filename);
+    if (sharedOnNative) {
+      showToast('تم فتح قائمة المشاركة ✓', 'success');
+      return;
+    }
+  } catch (err) {
+    if (isShareCancelled(err)) return;
+    console.error('Capacitor share failed:', err);
+  }
+
   // Try Web Share API first (for mobile)
   if (navigator.share) {
     try {
@@ -288,6 +330,11 @@ async function exportExcel() {
     }
   }
 
+  if (isNativePlatform()) {
+    showToast('تعذر فتح قائمة المشاركة. نفذ cap sync ثم جرّب مرة أخرى.', 'error');
+    return;
+  }
+
   // Fallback: direct download
   downloadExcel(wb, filename);
 }
@@ -301,6 +348,208 @@ function timestamp() {
   const d = new Date();
   const pad = n => String(n).padStart(2, '0');
   return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+}
+
+async function shareViaCapacitor(blob, filename) {
+  const plugins = getCapacitorPlugins();
+  if (!plugins) return false;
+
+  const sharePlugin = plugins.Share;
+  const fsPlugin = plugins.Filesystem;
+  if (!sharePlugin || !fsPlugin) return false;
+
+  const base64Data = await blobToBase64(blob);
+  const written = await fsPlugin.writeFile({
+    path: `exports/${filename}`,
+    data: base64Data,
+    directory: 'CACHE',
+    recursive: true
+  });
+
+  await sharePlugin.share({
+    title: 'انتقاء جهاز مستقبل مصر',
+    text: 'ملف Excel من تطبيق انتقاء جهاز',
+    files: [written.uri],
+    dialogTitle: 'مشاركة ملف Excel'
+  });
+
+  return true;
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = String(reader.result || '');
+      const parts = result.split(',');
+      resolve(parts[1] || '');
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function getCapacitorPlugins() {
+  if (!isNativePlatform()) return null;
+  const cap = window.Capacitor;
+  return cap && cap.Plugins ? cap.Plugins : null;
+}
+
+function isNativePlatform() {
+  const cap = window.Capacitor;
+  if (!cap) return false;
+
+  if (typeof cap.isNativePlatform === 'function') {
+    return cap.isNativePlatform();
+  }
+
+  if (typeof cap.getPlatform === 'function') {
+    const p = cap.getPlatform();
+    return p === 'android' || p === 'ios';
+  }
+
+  return false;
+}
+
+function isShareCancelled(err) {
+  if (!err) return false;
+  if (err.name === 'AbortError') return true;
+  const msg = String(err.message || err).toLowerCase();
+  return msg.includes('cancel') || msg.includes('abort');
+}
+
+// ── Cache / Persistence ───────────────────────
+function clampColumnCount(value, fallback = 3) {
+  return Math.min(20, Math.max(1, parseInt(value, 10) || fallback));
+}
+
+function scheduleSetupCacheSave() {
+  clearTimeout(cacheTimer);
+  cacheTimer = setTimeout(persistSetupToCache, 180);
+}
+
+function scheduleTableCacheSave() {
+  clearTimeout(cacheTimer);
+  cacheTimer = setTimeout(persistTableToCache, 180);
+}
+
+function persistSetupToCache() {
+  if (isRestoringCache) return;
+
+  const colCount = clampColumnCount(colCountEl.value, 3);
+  const columnDrafts = [...colNamesWrap.querySelectorAll('.col-name-input')].map(el => el.value);
+  const setupStep = stepNames.classList.contains('active') ? 'names' : 'count';
+
+  writeCache({
+    mode: 'setup',
+    setupStep,
+    colCount,
+    columnDrafts
+  });
+}
+
+function persistTableToCache() {
+  if (isRestoringCache) return;
+
+  const rows = [...tableBody.rows].map(tr => {
+    const cells = [...tr.querySelectorAll('.cell-input')];
+    return cells.map(cell => cell.value);
+  });
+
+  writeCache({
+    mode: 'table',
+    columns: [...state.columns],
+    rows
+  });
+}
+
+function writeCache(payload) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      version: CACHE_VERSION,
+      updatedAt: Date.now(),
+      ...payload
+    }));
+  } catch (err) {
+    console.error('Unable to write cache:', err);
+  }
+}
+
+function readCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (err) {
+    console.error('Unable to read cache:', err);
+    return null;
+  }
+}
+
+function clearCache() {
+  try {
+    localStorage.removeItem(CACHE_KEY);
+  } catch (err) {
+    console.error('Unable to clear cache:', err);
+  }
+}
+
+function restoreFromCache() {
+  const cached = readCache();
+  if (!cached || cached.version !== CACHE_VERSION) return;
+
+  isRestoringCache = true;
+
+  try {
+    if (cached.mode === 'table' && Array.isArray(cached.columns) && cached.columns.length > 0) {
+      const columns = cached.columns.map((name, i) => {
+        const text = String(name || '').trim();
+        return text || `عمود ${i + 1}`;
+      });
+
+      state.columns = columns;
+      state.rowCount = 0;
+      buildTableHeader(columns);
+      tableBody.innerHTML = '';
+
+      const rows = Array.isArray(cached.rows) ? cached.rows : [];
+      rows.forEach(row => addRow(Array.isArray(row) ? row : [], false));
+
+      tableMeta.textContent = `${columns.length} أعمدة`;
+      updateCounter();
+      showEmptyState(tableBody.rows.length === 0);
+
+      overlay.classList.remove('active');
+      app.classList.remove('hidden');
+      return;
+    }
+
+    if (cached.mode === 'setup') {
+      const count = clampColumnCount(cached.colCount, 3);
+      colCountEl.value = count;
+
+      const drafts = Array.isArray(cached.columnDrafts) ? cached.columnDrafts : [];
+      const showNamesStep = cached.setupStep === 'names' || drafts.length > 0;
+
+      if (showNamesStep) {
+        buildNameInputs(count);
+        const inputs = [...colNamesWrap.querySelectorAll('.col-name-input')];
+        inputs.forEach((input, i) => {
+          input.value = typeof drafts[i] === 'string' ? drafts[i] : '';
+        });
+
+        stepCount.classList.remove('active');
+        stepNames.classList.add('active');
+      } else {
+        stepNames.classList.remove('active');
+        stepCount.classList.add('active');
+      }
+
+      overlay.classList.add('active');
+      app.classList.add('hidden');
+    }
+  } finally {
+    isRestoringCache = false;
+  }
 }
 
 // ── Toast ──────────────────────────────────────
@@ -325,3 +574,13 @@ function makeEl(tag, attrs = {}, text = '') {
   if (text) el.textContent = text;
   return el;
 }
+
+window.addEventListener('beforeunload', () => {
+  if (app.classList.contains('hidden')) {
+    persistSetupToCache();
+  } else {
+    persistTableToCache();
+  }
+});
+
+restoreFromCache();
