@@ -66,26 +66,36 @@ body {
 
 /* Logo */
 .setup-logo {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 10px;
 }
-.logo-mark {
-  font-size: 28px; color: var(--amber);
-  filter: drop-shadow(0 0 8px var(--amber));
-  display: inline-block;
+
+.brand-logo {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
 }
-.logo-mark.small { font-size: 18px; }
-.logo-text {
-  font-family: var(--font-head);
-  font-size: 22px; font-weight: 800;
-  letter-spacing: -.5px;
-  color: var(--text);
+
+.setup-brand-logo {
+  width: min(320px, 78vw);
+  max-height: 98px;
 }
+
+.header-brand-logo {
+  width: clamp(130px, 24vw, 220px);
+  max-height: 42px;
+}
+
 .setup-tagline {
-  font-size: 11px; letter-spacing: 3px;
-  text-transform: uppercase; color: var(--text-dim);
-  margin-bottom: 40px;
-  padding-left: 38px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text-dim);
+  text-align: center;
+  margin-bottom: 34px;
+  padding-left: 0;
 }
 
 /* Steps */
@@ -202,7 +212,9 @@ body {
 
 /* ── HEADER ─────────────────────────────────── */
 .app-header {
-  display: flex; align-items: center; gap: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 0 28px;
   height: 60px;
   border-bottom: 1px solid var(--border);
@@ -210,8 +222,11 @@ body {
   position: sticky; top: 0; z-index: 10;
 }
 .header-brand {
-  display: flex; align-items: center; gap: 8px;
-  margin-right: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-inline-end: auto;
+  flex-shrink: 0;
 }
 .header-meta {
   font-size: 11px; letter-spacing: 1.5px;
@@ -439,10 +454,33 @@ td.col-num {
 
 /* ── RESPONSIVE ──────────────────────────────── */
 @media (max-width: 600px) {
-  .setup-card { padding: 36px 28px; }
+  .setup-card { padding: 34px 22px; }
+  .setup-brand-logo {
+    width: min(255px, 78vw);
+    max-height: 78px;
+  }
+  .setup-tagline {
+    font-size: 13px;
+    margin-bottom: 26px;
+  }
   .table-wrap { padding: 16px; }
   .toolbar { padding: 10px 16px; }
   .app-header { padding: 0 16px; }
+  .header-brand-logo {
+    width: min(150px, 43vw);
+    max-height: 34px;
+  }
   .header-meta { display: none; }
+  .toolbar-left, .toolbar-right {
+    width: 100%;
+    justify-content: space-between;
+  }
   .action-btn { font-size: 11px; padding: 8px 14px; }
+}
+
+@media (max-width: 380px) {
+  .setup-card { padding: 28px 14px; }
+  .setup-tagline { font-size: 12px; }
+  .header-brand-logo { width: min(130px, 44vw); }
+  .ghost-btn { font-size: 11px; padding: 7px 10px; }
 }

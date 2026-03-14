@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>انتقاء جهاز مستقبل مصر</title>
+  <link rel="icon" type="image/png" href="logo.png" />
+  <link rel="apple-touch-icon" href="logo.png" />
   <link rel="stylesheet" href="style.css" />
   <!-- SheetJS (local for offline) -->
   <script src="xlsx.full.min.js"></script>
@@ -14,10 +16,9 @@
   <div id="setup-overlay" class="overlay active">
     <div class="setup-card">
       <div class="setup-logo">
-        <span class="logo-mark">⬡</span>
-        <span class="logo-text">انتقاء جهاز</span>
+        <img class="brand-logo setup-brand-logo" src="logo.png" alt="إنتقاء جهاز مستقبل مصر للتنمية المستدامة" />
       </div>
-      <p class="setup-tagline">إنشاء · تعديل · تصدير</p>
+      <p class="setup-tagline">إنتقاء جهاز مستقبل مصر للتنمية المستدامة</p>
 
       <!-- Step 1: column count -->
       <div id="step-count" class="setup-step active">
@@ -49,9 +50,8 @@
   <div id="app" class="hidden">
     <!-- Header -->
     <header class="app-header">
-      <div class="header-brand">
-        <span class="logo-mark small">⬡</span>
-        <span class="logo-text">انتقاء جهاز</span>
+      <div class="header-brand" aria-label="إنتقاء جهاز مستقبل مصر للتنمية المستدامة">
+        <img class="brand-logo header-brand-logo" src="logo.png" alt="شعار إنتقاء جهاز مستقبل مصر للتنمية المستدامة" />
       </div>
       <div class="header-meta" id="table-meta"></div>
       <button class="ghost-btn" id="btn-reset" title="البدء من جديد">↺ إعادة</button>
