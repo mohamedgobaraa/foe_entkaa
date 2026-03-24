@@ -8,10 +8,19 @@
 const CACHE_KEY = 'tableforge.cache.v1';
 const CACHE_VERSION = 1;
 
+// ── Educational Levels Configuration ──────────
+const EDUCATION_LEVELS = {
+  'عليا': ['الاسم', 'الرقم الثلاثي', 'المؤهل', 'التخصص', 'المحافظة', 'المنطقة'],
+  'فوق متوسطة': ['الاسم', 'الرقم الثلاثي', 'المؤهل', 'المهنة', 'المحافظة', 'المنطقة'],
+  'متوسطة': ['الاسم', 'الرقم الثلاثي', 'المؤهل', 'المهنة', 'المحافظة', 'المنطقة'],
+  'عادة': ['الاسم', 'الرقم الثلاثي', 'المهنة', 'المحافظة', 'المنطقة']
+};
+
 // ── State ──────────────────────────────────────
 const state = {
-  columns: [],   // string[]
+  columns: [],          // string[]
   rowCount: 0,
+  educationLevel: '',   // المستوى التعليمي المختار
 };
 
 let cacheTimer = null;
@@ -19,10 +28,7 @@ let isRestoringCache = false;
 
 // ── DOM refs ───────────────────────────────────
 const overlay      = document.getElementById('setup-overlay');
-const stepCount    = document.getElementById('step-count');
-const stepNames    = document.getElementById('step-names');
-const colCountEl   = document.getElementById('col-count');
-const colNamesWrap = document.getElementById('col-names-wrap');
+const stepLevel    = document.getElementById('step-level');
 const app          = document.getElementById('app');
 const tableHead    = document.getElementById('table-head');
 const tableBody    = document.getElementById('table-body');
@@ -31,96 +37,33 @@ const rowCounter   = document.getElementById('row-counter');
 const emptyState   = document.getElementById('empty-state');
 const toast        = document.getElementById('toast');
 
-// ── Setup: Step 1 — column count ──────────────
-document.getElementById('btn-dec').addEventListener('click', () => {
-  const v = parseInt(colCountEl.value, 10);
-  if (v > 1) colCountEl.value = v - 1;
-  persistSetupToCache();
+// ── Setup: Educational Level Selection ────────
+document.querySelectorAll('.level-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const level = btn.dataset.level;
+    if (!EDUCATION_LEVELS[level]) return;
+
+    // Set state
+    state.educationLevel = level;
+    state.columns = EDUCATION_LEVELS[level];
+    state.rowCount = 0;
+
+    // Build table
+    buildTableHeader(state.columns);
+    tableBody.innerHTML = '';
+    updateCounter();
+    showEmptyState(true);
+
+    // Update header meta
+    tableMeta.textContent = `${level} • ${state.columns.length} أعمدة`;
+
+    // Transition to app
+    overlay.classList.remove('active');
+    app.classList.remove('hidden');
+
+    persistTableToCache();
+  });
 });
-document.getElementById('btn-inc').addEventListener('click', () => {
-  const v = parseInt(colCountEl.value, 10);
-  if (v < 20) colCountEl.value = v + 1;
-  persistSetupToCache();
-});
-
-colCountEl.addEventListener('input', () => {
-  colCountEl.value = clampColumnCount(colCountEl.value, 1);
-  persistSetupToCache();
-});
-
-colNamesWrap.addEventListener('keydown', (e) => {
-  if (e.key !== 'Enter' || !stepNames.classList.contains('active')) return;
-  const inputs = [...colNamesWrap.querySelectorAll('.col-name-input')];
-  const idx = inputs.indexOf(e.target);
-  if (idx < inputs.length - 1) {
-    inputs[idx + 1].focus();
-  } else {
-    createTable();
-  }
-});
-
-colNamesWrap.addEventListener('input', scheduleSetupCacheSave);
-
-document.getElementById('btn-next').addEventListener('click', () => {
-  const count = clampColumnCount(colCountEl.value, 3);
-  colCountEl.value = count;
-  buildNameInputs(count);
-  stepCount.classList.remove('active');
-  stepNames.classList.add('active');
-  persistSetupToCache();
-
-  // Focus first input
-  const first = colNamesWrap.querySelector('.col-name-input');
-  if (first) first.focus();
-});
-
-function buildNameInputs(n) {
-  colNamesWrap.innerHTML = '';
-  for (let i = 0; i < n; i++) {
-    const row = document.createElement('div');
-    row.className = 'col-name-row';
-    row.innerHTML = `
-      <span class="col-name-index">${String(i + 1).padStart(2, '0')}</span>
-      <input
-        class="col-name-input"
-        type="text"
-        placeholder="عمود ${i + 1}"
-        maxlength="40"
-        data-index="${i}"
-      />
-    `;
-    colNamesWrap.appendChild(row);
-  }
-}
-
-// ── Setup: Step 2 — create table ──────────────
-document.getElementById('btn-create').addEventListener('click', createTable);
-
-function createTable() {
-  const inputs  = [...colNamesWrap.querySelectorAll('.col-name-input')];
-  const columns = inputs.map((el, i) => el.value.trim() || `عمود ${i + 1}`);
-
-  // Save to state
-  state.columns  = columns;
-  state.rowCount = 0;
-
-  // Build table header
-  buildTableHeader(columns);
-
-  // Clear body
-  tableBody.innerHTML = '';
-  updateCounter();
-  showEmptyState(true);
-
-  // Update header meta
-  tableMeta.textContent = `${columns.length} أعمدة`;
-
-  // Transition
-  overlay.classList.remove('active');
-  app.classList.remove('hidden');
-
-  persistTableToCache();
-}
 
 function buildTableHeader(columns) {
   tableHead.innerHTML = '';
@@ -243,14 +186,12 @@ function showEmptyState(yes) {
 
 // ── App: Reset ─────────────────────────────────
 document.getElementById('btn-reset').addEventListener('click', () => {
-  // Go back to setup
-  stepNames.classList.remove('active');
-  stepCount.classList.add('active');
-  colCountEl.value   = 3;
-  colNamesWrap.innerHTML = '';
-  state.columns  = [];
+  // Reset state
+  state.columns = [];
   state.rowCount = 0;
+  state.educationLevel = '';
 
+  // Return to setup
   app.classList.add('hidden');
   overlay.classList.add('active');
 
@@ -287,7 +228,7 @@ async function exportExcel() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'البيانات');
 
-  const filename = `انتقاء_${timestamp()}.xlsx`;
+  const filename = `انتقاء_${state.educationLevel}_${timestamp()}.xlsx`;
 
   // Create the Excel file
   const xlsxData = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
@@ -419,33 +360,9 @@ function isShareCancelled(err) {
 }
 
 // ── Cache / Persistence ───────────────────────
-function clampColumnCount(value, fallback = 3) {
-  return Math.min(20, Math.max(1, parseInt(value, 10) || fallback));
-}
-
-function scheduleSetupCacheSave() {
-  clearTimeout(cacheTimer);
-  cacheTimer = setTimeout(persistSetupToCache, 180);
-}
-
 function scheduleTableCacheSave() {
   clearTimeout(cacheTimer);
   cacheTimer = setTimeout(persistTableToCache, 180);
-}
-
-function persistSetupToCache() {
-  if (isRestoringCache) return;
-
-  const colCount = clampColumnCount(colCountEl.value, 3);
-  const columnDrafts = [...colNamesWrap.querySelectorAll('.col-name-input')].map(el => el.value);
-  const setupStep = stepNames.classList.contains('active') ? 'names' : 'count';
-
-  writeCache({
-    mode: 'setup',
-    setupStep,
-    colCount,
-    columnDrafts
-  });
 }
 
 function persistTableToCache() {
@@ -458,6 +375,7 @@ function persistTableToCache() {
 
   writeCache({
     mode: 'table',
+    educationLevel: state.educationLevel,
     columns: [...state.columns],
     rows
   });
@@ -500,21 +418,28 @@ function restoreFromCache() {
   isRestoringCache = true;
 
   try {
-    if (cached.mode === 'table' && Array.isArray(cached.columns) && cached.columns.length > 0) {
+    if (cached.mode === 'table' &&
+        cached.educationLevel &&
+        Array.isArray(cached.columns) &&
+        cached.columns.length > 0) {
+
+      const level = cached.educationLevel;
       const columns = cached.columns.map((name, i) => {
         const text = String(name || '').trim();
         return text || `عمود ${i + 1}`;
       });
 
+      state.educationLevel = level;
       state.columns = columns;
       state.rowCount = 0;
+
       buildTableHeader(columns);
       tableBody.innerHTML = '';
 
       const rows = Array.isArray(cached.rows) ? cached.rows : [];
       rows.forEach(row => addRow(Array.isArray(row) ? row : [], false));
 
-      tableMeta.textContent = `${columns.length} أعمدة`;
+      tableMeta.textContent = `${level} • ${columns.length} أعمدة`;
       updateCounter();
       showEmptyState(tableBody.rows.length === 0);
 
@@ -523,30 +448,9 @@ function restoreFromCache() {
       return;
     }
 
-    if (cached.mode === 'setup') {
-      const count = clampColumnCount(cached.colCount, 3);
-      colCountEl.value = count;
-
-      const drafts = Array.isArray(cached.columnDrafts) ? cached.columnDrafts : [];
-      const showNamesStep = cached.setupStep === 'names' || drafts.length > 0;
-
-      if (showNamesStep) {
-        buildNameInputs(count);
-        const inputs = [...colNamesWrap.querySelectorAll('.col-name-input')];
-        inputs.forEach((input, i) => {
-          input.value = typeof drafts[i] === 'string' ? drafts[i] : '';
-        });
-
-        stepCount.classList.remove('active');
-        stepNames.classList.add('active');
-      } else {
-        stepNames.classList.remove('active');
-        stepCount.classList.add('active');
-      }
-
-      overlay.classList.add('active');
-      app.classList.add('hidden');
-    }
+    // If no valid cached table, show setup screen
+    overlay.classList.add('active');
+    app.classList.add('hidden');
   } finally {
     isRestoringCache = false;
   }
@@ -576,9 +480,7 @@ function makeEl(tag, attrs = {}, text = '') {
 }
 
 window.addEventListener('beforeunload', () => {
-  if (app.classList.contains('hidden')) {
-    persistSetupToCache();
-  } else {
+  if (!app.classList.contains('hidden')) {
     persistTableToCache();
   }
 });

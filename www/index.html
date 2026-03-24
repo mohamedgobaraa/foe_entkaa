@@ -20,28 +20,30 @@
       </div>
       <p class="setup-tagline">إنتقاء جهاز مستقبل مصر للتنمية المستدامة</p>
 
-      <!-- Step 1: column count -->
-      <div id="step-count" class="setup-step active">
+      <!-- Educational Level Selection -->
+      <div id="step-level" class="setup-step active">
         <label class="step-label">
-          <span class="step-num">01</span>
-          كم عدد الأعمدة؟
+          <span class="step-num">⬡</span>
+          اختر المستوى التعليمي
         </label>
-        <div class="number-input-wrap">
-          <button class="num-btn" id="btn-dec" aria-label="إنقاص">−</button>
-          <input type="number" id="col-count" value="3" min="1" max="20" />
-          <button class="num-btn" id="btn-inc" aria-label="زيادة">+</button>
+        <div class="level-options">
+          <button class="level-btn" data-level="عليا">
+            <span class="level-title">عليا</span>
+            <span class="level-cols">6 أعمدة</span>
+          </button>
+          <button class="level-btn" data-level="فوق متوسطة">
+            <span class="level-title">فوق متوسطة</span>
+            <span class="level-cols">6 أعمدة</span>
+          </button>
+          <button class="level-btn" data-level="متوسطة">
+            <span class="level-title">متوسطة</span>
+            <span class="level-cols">6 أعمدة</span>
+          </button>
+          <button class="level-btn" data-level="عادة">
+            <span class="level-title">عادة</span>
+            <span class="level-cols">5 أعمدة</span>
+          </button>
         </div>
-        <button class="cta-btn" id="btn-next">التالي ←</button>
-      </div>
-
-      <!-- Step 2: column names -->
-      <div id="step-names" class="setup-step">
-        <label class="step-label">
-          <span class="step-num">02</span>
-          سمّي الأعمدة
-        </label>
-        <div id="col-names-wrap"></div>
-        <button class="cta-btn" id="btn-create">إنشاء الجدول</button>
       </div>
     </div>
   </div>
