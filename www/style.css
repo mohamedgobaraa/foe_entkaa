@@ -367,11 +367,11 @@ thead tr {
   border-bottom: 2px solid var(--amber-dim);
 }
 th {
-  padding: 14px 16px;
+  padding: 16px 18px;
   text-align: left;
   font-family: var(--font-head);
-  font-size: 12px; font-weight: 700;
-  letter-spacing: 1.5px;
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 1.2px;
   text-transform: uppercase;
   color: var(--amber);
   white-space: nowrap;
@@ -386,11 +386,21 @@ th:last-child::after { display: none; }
 
 /* TH: row number col */
 th.col-num, td.col-num {
-  width: 50px; min-width: 50px;
-  color: var(--text-faint);
+  width: 60px; min-width: 60px;
   text-align: center;
-  font-size: 11px;
   user-select: none;
+}
+
+th.col-num {
+  color: var(--amber);
+  font-size: 12px;
+}
+
+td.col-num {
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 14px 8px;
 }
 
 /* TH: delete col */
@@ -411,26 +421,25 @@ tbody tr:hover { background: var(--surface2); }
 td {
   padding: 0;
   vertical-align: middle;
-}
-td.col-num {
-  padding: 10px 8px;
-  color: var(--text-faint);
-  font-size: 11px;
+  height: 100%;
 }
 
 /* Editable cell */
 .cell-input {
   display: block;
-  width: 100%; min-width: 120px;
+  width: 100%; min-width: 140px;
+  min-height: 48px;
   background: transparent;
   border: none;
   color: var(--text);
   font-family: var(--font-mono);
-  font-size: 13px;
-  padding: 12px 16px;
+  font-size: 15px;
+  line-height: 1.5;
+  padding: 14px 18px;
   transition: background .12s;
   resize: none;
   outline: none;
+  vertical-align: middle;
 }
 .cell-input:focus {
   background: rgba(245,166,35,.06);
