@@ -94,6 +94,24 @@
     <div id="toast" class="toast" aria-live="polite"></div>
   </div>
 
+  <!-- ── ADD ROW MODAL ── -->
+  <div id="add-row-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">إضافة شخص جديد</h2>
+        <button class="modal-close" id="modal-close-btn" aria-label="إغلاق">×</button>
+      </div>
+      <form id="add-row-form" class="modal-form">
+        <!-- Form fields will be generated dynamically -->
+        <div id="form-fields"></div>
+        <div class="modal-actions">
+          <button type="button" class="modal-btn cancel" id="modal-cancel-btn">إلغاء</button>
+          <button type="submit" class="modal-btn save">حفظ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>

@@ -36,6 +36,11 @@ const tableMeta    = document.getElementById('table-meta');
 const rowCounter   = document.getElementById('row-counter');
 const emptyState   = document.getElementById('empty-state');
 const toast        = document.getElementById('toast');
+const modal        = document.getElementById('add-row-modal');
+const modalForm    = document.getElementById('add-row-form');
+const formFields   = document.getElementById('form-fields');
+const modalCloseBtn = document.getElementById('modal-close-btn');
+const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
 // ── Setup: Educational Level Selection ────────
 document.querySelectorAll('.level-btn').forEach(btn => {
@@ -82,8 +87,118 @@ function buildTableHeader(columns) {
   tableHead.appendChild(tr);
 }
 
-// ── App: Add Row ───────────────────────────────
-document.getElementById('btn-add-row').addEventListener('click', () => addRow());
+// ── App: Add Row (via Modal) ──────────────────
+document.getElementById('btn-add-row').addEventListener('click', () => openRowModal());
+
+function openRowModal() {
+  buildFormFields();
+  modal.classList.add('active');
+
+  // Focus first input
+  setTimeout(() => {
+    const firstInput = formFields.querySelector('input, textarea');
+    if (firstInput) firstInput.focus();
+  }, 100);
+}
+
+function closeRowModal() {
+  modal.classList.remove('active');
+  modalForm.reset();
+}
+
+function buildFormFields() {
+  formFields.innerHTML = '';
+
+  state.columns.forEach((colName, index) => {
+    const fieldDiv = document.createElement('div');
+    fieldDiv.className = 'form-field';
+
+    const label = document.createElement('label');
+    label.className = 'form-label';
+    label.textContent = colName;
+    label.htmlFor = `field-${index}`;
+
+    // Check if this is the "الرقم الثلاثي" field
+    if (colName === 'الرقم الثلاثي') {
+      const tripleWrap = document.createElement('div');
+      tripleWrap.className = 'triple-input-wrap';
+
+      for (let i = 0; i < 3; i++) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'form-input triple-input';
+        input.placeholder = `جزء ${i + 1}`;
+        input.dataset.colIndex = index;
+        input.dataset.partIndex = i;
+        tripleWrap.appendChild(input);
+
+        if (i < 2) {
+          const sep = document.createElement('span');
+          sep.className = 'triple-separator';
+          sep.textContent = '\\';
+          tripleWrap.appendChild(sep);
+        }
+      }
+
+      fieldDiv.appendChild(label);
+      fieldDiv.appendChild(tripleWrap);
+    } else {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.id = `field-${index}`;
+      input.className = 'form-input';
+      input.placeholder = `أدخل ${colName}`;
+      input.dataset.colIndex = index;
+
+      fieldDiv.appendChild(label);
+      fieldDiv.appendChild(input);
+    }
+
+    formFields.appendChild(fieldDiv);
+  });
+}
+
+// Modal close handlers
+modalCloseBtn.addEventListener('click', closeRowModal);
+modalCancelBtn.addEventListener('click', closeRowModal);
+
+// Close modal when clicking outside
+modal.addEventListener('click', (e) => {
+  if (e.target === modal) closeRowModal();
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && modal.classList.contains('active')) {
+    closeRowModal();
+  }
+});
+
+// Handle form submission
+modalForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+
+  const rowData = [];
+
+  state.columns.forEach((colName, index) => {
+    if (colName === 'الرقم الثلاثي') {
+      // Collect triple number parts
+      const parts = [];
+      for (let i = 0; i < 3; i++) {
+        const input = formFields.querySelector(`input[data-col-index="${index}"][data-part-index="${i}"]`);
+        parts.push(input ? input.value.trim() : '');
+      }
+      rowData.push(parts.join('\\'));
+    } else {
+      const input = formFields.querySelector(`input[data-col-index="${index}"]:not(.triple-input)`);
+      rowData.push(input ? input.value.trim() : '');
+    }
+  });
+
+  addRow(rowData, false);
+  closeRowModal();
+  showToast('تمت إضافة الشخص بنجاح ✓', 'success');
+});
 
 function addRow(prefilledValues = [], focusInput = true) {
   showEmptyState(false);
